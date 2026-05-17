@@ -15,11 +15,17 @@ FetchContent_MakeAvailable(glfw)
 
 find_package(OpenGL REQUIRED)
 
-add_executable(OpenGLTest main.cpp
+add_executable(OpenGLTest
         main.cpp
+        glad.c
+        example/Example1.cpp
 )
 
 target_link_libraries(OpenGLTest
         glfw
         OpenGL::GL
+)
+
+target_include_directories(OpenGLTest PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
