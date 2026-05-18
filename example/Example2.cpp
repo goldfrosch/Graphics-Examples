@@ -1,23 +1,44 @@
-#include "Example1.h"
+#include "Example2.h"
 #include <iostream>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <OpenGLUtil.h>
 
-void Example1::createTriangle(const int ScreenWidth, const int ScreenHeight) {
+void Example2::createTriangle(int ScreenWidth, int ScreenHeight) {
+    // TODO: 정점 받은 것을 기준으로 lerp 처리
     const auto vertexShaderSource = "#version 330 core\n"
         "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 1) in vec3 aColor;\n"
+        "out vec3 ourColor;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+        "   gl_Position = vec4(aPos, 1.0);\n"
+        "   ourColor = aColor;\n"
         "}\0";
+
     const auto fragmentShaderSource = "#version 330 core\n"
         "out vec4 FragColor;\n"
+        "in vec3 ourColor;\n"
         "void main()\n"
         "{\n"
-        "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\n\0";
+        "   FragColor = vec4(ourColor, 1.0f);\n"
+        "}\n\0";
 
+    GLFWwindow* window = nullptr;
+    unsigned int shaderProgram, VAO, VBO;
+    initShader(window,shaderProgram, ScreenWidth, ScreenHeight, vertexShaderSource, fragmentShaderSource);
+    setShaderAttributes(shaderProgram, VAO, VBO);
+    renderLoop(window, shaderProgram, VAO);
+
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteProgram(shaderProgram);
+
+    glfwTerminate();
+}
+
+void Example2::initShader(GLFWwindow*& window, unsigned int& shaderProgram, const int ScreenWidth, const int ScreenHeight
+    , const char* vertexShaderSource, const char* fragmentShaderSource) {
     if (!glfwInit())
     {
         std::cout << "Failed to initialize GLFW" << std::endl;
@@ -28,7 +49,7 @@ void Example1::createTriangle(const int ScreenWidth, const int ScreenHeight) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(ScreenWidth, ScreenHeight, "LearnOpenGL", nullptr, nullptr);
+    window = glfwCreateWindow(ScreenWidth, ScreenHeight, "LearnOpenGL", nullptr, nullptr);
     if (window == nullptr)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -50,12 +71,9 @@ void Example1::createTriangle(const int ScreenWidth, const int ScreenHeight) {
     const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
     glCompileShader(vertexShader);
-
     int success;
-    // 에러 로그 저장 공간
     char infoLog[512];
 
-    // glGetShaderiv 함수 자체가 검증 로직으로 보임.
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
@@ -76,7 +94,7 @@ void Example1::createTriangle(const int ScreenWidth, const int ScreenHeight) {
 
     // 위 2개에서는 vertex와 fragment 소스코드 기반의 쉐이더 정의 및 생성이라면
     // 여기서는 attach를 통해서 실제 쉐이더를 부착하는 과정이다.
-    unsigned int shaderProgram = glCreateProgram();
+    shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
@@ -89,33 +107,33 @@ void Example1::createTriangle(const int ScreenWidth, const int ScreenHeight) {
 
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
+}
 
-    // 위 쉐이더는 실제로 점을 찍는 과정이 아닌 쉐이더 등록에 가깝다. 그래픽스 렌더링 파이프라인에서 사용할 렌더 방식을 등록하는
-    // 과정에 더 가깝기에 위에서는 사용할 쉐이더를 정의 및 등록하고 실제 런타임에서 특정 vertex를 찍어서 새로운 쉐이더를 생성한다.
+void Example2::setShaderAttributes(unsigned int& shaderProgram
+    , unsigned int& VAO, unsigned int& VBO) {
     constexpr float vertices[] = {
-        -0.5f, -0.5f, 0.0f, // left
-         0.5f, -0.5f, 0.0f, // right
-         0.0f,  0.5f, 0.0f  // top
-    };
+        0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+       -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
+        0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f
+   };
 
-    // TODO: 얘는 뭐하는 기능일까... buffer와 array 관련인것을 보아하니 데이터를 밀어넣고 그 값을 반환하는 구조로 보임.
-    unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glBindVertexArray(VAO);
 
-    // 가져온 데이터를 기반으로 buffer에 바인딩 처리
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    // 버퍼에 데이터 밀어넣기
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), static_cast<void *>(0));
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), reinterpret_cast<void *>(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    // 쉐이더 동작 명령인데, 동적 쉐이더는 while 문 내에서, 정적 쉐이더는 while문 밖에서 호출하는 구조로 되어 있음.
+    glUseProgram(shaderProgram);
+}
 
-    glBindVertexArray(0);
-
+void Example2::renderLoop(GLFWwindow* window, unsigned int& shaderProgram, unsigned int& VAO) {
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
@@ -123,17 +141,12 @@ void Example1::createTriangle(const int ScreenWidth, const int ScreenHeight) {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
+        // 바인딩 및 드로잉
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
-
-    // 종료되는 시점에서 메모리 해제 기능임
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(shaderProgram);
-
-    glfwTerminate();
 }
+
+

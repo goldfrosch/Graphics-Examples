@@ -17,8 +17,10 @@ find_package(OpenGL REQUIRED)
 
 add_executable(OpenGLTest
         main.cpp
+        OpenGLUtil.cpp
         glad.c
         example/Example1.cpp
+        example/Example2.cpp
 )
 
 target_link_libraries(OpenGLTest
