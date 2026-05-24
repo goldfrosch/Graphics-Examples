@@ -58,6 +58,7 @@ void Example2::initShader(GLFWwindow*& window, unsigned int& shaderProgram, cons
     }
 
     glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     if (!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
     {
@@ -65,8 +66,6 @@ void Example2::initShader(GLFWwindow*& window, unsigned int& shaderProgram, cons
         glfwTerminate();
         return;
     }
-
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     const unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
@@ -112,7 +111,7 @@ void Example2::initShader(GLFWwindow*& window, unsigned int& shaderProgram, cons
 void Example2::setShaderAttributes(unsigned int& shaderProgram
     , unsigned int& VAO, unsigned int& VBO) {
     constexpr float vertices[] = {
-        0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, 0.5f,  1.0f, 0.0f, 0.0f,
        -0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,
         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f
    };

@@ -21,6 +21,8 @@ add_executable(OpenGLTest
         glad.c
         example/Example1.cpp
         example/Example2.cpp
+        example/Example3.cpp
+        object/Shader.h
 )
 
 target_link_libraries(OpenGLTest
